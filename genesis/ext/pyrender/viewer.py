@@ -1212,6 +1212,16 @@ class Viewer(pyglet.window.Window):
         self.set_caption(self.viewer_flags["window_title"])
         self.activate()
 
+        # On macOS, we need to explicitly activate the app to bring the window to focus
+        # when running from terminal (not as a bundled .app)
+        if sys.platform.startswith("darwin"):
+            try:
+                from AppKit import NSApp, NSApplication
+                NSApplication.sharedApplication()
+                NSApp.activateIgnoringOtherApps_(True)
+            except ImportError:
+                gs.logger.debug("PyObjC not available, window may not come to focus automatically")
+
         # The viewer can be considered as fully initialized at this point
         if not self._initialized_event.is_set():
             self._initialized_event.set()
@@ -1239,6 +1249,18 @@ class Viewer(pyglet.window.Window):
             raise RuntimeError("'Viewer.run' cannot be called manually if the viewer is already running in thread.")
         elif threading.main_thread() != threading.current_thread():
             raise RuntimeError("'Viewer.run' can only be called manually from main thread on MacOS.")
+
+        # On macOS, we need to explicitly activate the app to bring the window to focus
+        # when running from terminal (not as a bundled .app)
+        if sys.platform.startswith("darwin"):
+            try:
+                from AppKit import NSApp, NSApplication
+                NSApplication.sharedApplication()
+                NSApp.activateIgnoringOtherApps_(True)
+                # Also request the window to be frontmost
+                self.activate()
+            except ImportError:
+                gs.logger.debug("PyObjC not available, window may not come to focus automatically")
 
         while self._is_active:
             try:
