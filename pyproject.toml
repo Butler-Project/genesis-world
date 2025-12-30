@@ -66,6 +66,8 @@ dependencies = [
     "fast_simplification>=0.1.12",
     # Surface reconstruction library for particle data from SPH simulations
     "pysplashsurf==0.14.*",
+     # Used on macOS to properly bring the viewer window to focus when running from terminal
+    "pyobjc-framework-Cocoa; sys_platform == 'darwin'",
 ]
 
 [project.optional-dependencies]
