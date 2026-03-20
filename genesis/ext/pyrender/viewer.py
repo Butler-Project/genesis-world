@@ -19,16 +19,21 @@ from genesis.vis.keybindings import Key, KeyAction, Keybind, Keybindings, KeyMod
 
 # Importing tkinter and creating a first context before importing pyglet is necessary to avoid later segfault on MacOS.
 # Note that destroying the window will cause segfault at exit.
+# On macOS 26+ (Darwin 25, Tahoe), system Tk 8.5 crashes on init due to a Darwin/product version mismatch.
+# The pyglet segfault workaround is not needed on macOS 26+.
 root = None
 if sys.platform.startswith("darwin"):
-    try:
-        from tkinter import Tk
+    import platform as _platform
+    _mac_major = int(_platform.mac_ver()[0].split(".")[0]) if _platform.mac_ver()[0] else 0
+    if _mac_major < 26:
+        try:
+            from tkinter import Tk
 
-        root = Tk()
-        root.withdraw()
-    except Exception:
-        # Some minimal Python install may not provide a working tkinter interface even if it is a standard library
-        pass
+            root = Tk()
+            root.withdraw()
+        except Exception:
+            # Some minimal Python install may not provide a working tkinter interface even if it is a standard library
+            pass
 
 import pyglet
 
