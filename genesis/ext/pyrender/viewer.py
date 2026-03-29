@@ -19,16 +19,21 @@ from genesis.vis.keybindings import Key, KeyAction, Keybind, Keybindings, KeyMod
 
 # Importing tkinter and creating a first context before importing pyglet is necessary to avoid later segfault on MacOS.
 # Note that destroying the window will cause segfault at exit.
+# On macOS 26+ (Darwin 25, Tahoe), system Tk 8.5 crashes on init due to a Darwin/product version mismatch.
+# The pyglet segfault workaround is not needed on macOS 26+.
 root = None
 if sys.platform.startswith("darwin"):
-    try:
-        from tkinter import Tk
+    import platform as _platform
+    _mac_major = int(_platform.mac_ver()[0].split(".")[0]) if _platform.mac_ver()[0] else 0
+    if _mac_major < 26:
+        try:
+            from tkinter import Tk
 
-        root = Tk()
-        root.withdraw()
-    except Exception:
-        # Some minimal Python install may not provide a working tkinter interface even if it is a standard library
-        pass
+            root = Tk()
+            root.withdraw()
+        except Exception:
+            # Some minimal Python install may not provide a working tkinter interface even if it is a standard library
+            pass
 
 import pyglet
 
@@ -1227,6 +1232,16 @@ class Viewer(pyglet.window.Window):
         self.set_caption(self.viewer_flags["window_title"])
         self.activate()
 
+        # On macOS, we need to explicitly activate the app to bring the window to focus
+        # when running from terminal (not as a bundled .app)
+        if sys.platform.startswith("darwin"):
+            try:
+                from AppKit import NSApp, NSApplication
+                NSApplication.sharedApplication()
+                NSApp.activateIgnoringOtherApps_(True)
+            except ImportError:
+                gs.logger.debug("PyObjC not available, window may not come to focus automatically")
+
         # The viewer can be considered as fully initialized at this point
         if not self._initialized_event.is_set():
             self._initialized_event.set()
@@ -1266,6 +1281,18 @@ class Viewer(pyglet.window.Window):
             raise RuntimeError("'Viewer.run' cannot be called manually if the viewer is already running in thread.")
         elif threading.main_thread() != threading.current_thread():
             raise RuntimeError("'Viewer.run' can only be called manually from main thread on MacOS.")
+
+        # On macOS, we need to explicitly activate the app to bring the window to focus
+        # when running from terminal (not as a bundled .app)
+        if sys.platform.startswith("darwin"):
+            try:
+                from AppKit import NSApp, NSApplication
+                NSApplication.sharedApplication()
+                NSApp.activateIgnoringOtherApps_(True)
+                # Also request the window to be frontmost
+                self.activate()
+            except ImportError:
+                gs.logger.debug("PyObjC not available, window may not come to focus automatically")
 
         while self._is_active:
             try:

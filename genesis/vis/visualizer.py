@@ -66,9 +66,9 @@ class Visualizer(RBC):
             if viewer_options.run_in_thread is None:
                 if sys.platform == "linux":
                     viewer_options.run_in_thread = True
-                elif sys.platform == "darwin":
+                elif sys.platform == "darwin" or gs.platform == "macOS":
                     viewer_options.run_in_thread = False
-                elif sys.platform == "win32":
+                elif sys.platform == "win32" or  gs.platform == "Windows":
                     viewer_options.run_in_thread = True
             if sys.platform == "darwin" and viewer_options.run_in_thread:
                 gs.raise_exception("Running viewer in background thread is not supported on MacOS.")
